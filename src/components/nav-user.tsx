@@ -20,14 +20,12 @@ import {
 } from "@/components/ui/sidebar"
 import { ChevronsUpDownIcon, LogOutIcon } from "lucide-react"
 import { useLogout } from "#/lib/handle"
-import { authClient } from "#/lib/auth-client"
 import type { NavUserProps } from "#/lib/type"
 
 
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
   const handleLogout = useLogout()
-  const { data: session } = authClient.useSession()
 
   return (
     <SidebarMenu>

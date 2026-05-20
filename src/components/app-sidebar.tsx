@@ -1,7 +1,5 @@
 'use client'
 
-import * as React from 'react'
-
 import { NavProjects } from '#/components/nav-primary'
 import { NavUser } from '@/components/nav-user'
 import {
@@ -15,16 +13,6 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import {
-  GalleryVerticalEndIcon,
-  AudioLinesIcon,
-  TerminalIcon,
-  TerminalSquareIcon,
-  BotIcon,
-  BookOpenIcon,
-  Settings2Icon,
-  FrameIcon,
-  PieChartIcon,
-  MapIcon,
   BookmarkIcon,
   Compass,
   Import,
@@ -37,19 +25,19 @@ const navItems: navPrimaryProps['items'] = linkOptions([
   {
     title: 'Items',
     icon: BookmarkIcon,
-    url: '/dashboard/items',
+    to: '/dashboard/items',
     activeOptions: {exact: false},
   },
   {
     title: 'Import',
     icon: Import,
-    url: '/dashboard/import',
+    to: '/dashboard/import',
     activeOptions: {exact: false},
   },
   {
     title: 'Discover',
     icon: Compass,
-    url: '/dashboard/discover',
+    to: '/dashboard/discover',
     activeOptions: {exact: false},
   },
 ])

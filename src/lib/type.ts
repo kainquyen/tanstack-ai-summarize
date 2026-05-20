@@ -5,7 +5,7 @@ export interface navPrimaryProps {
     items: {
         title: string,
         icon: LucideIcon,
-        url: string,
+        to: string,
         activeOptions: {exact: boolean}
     }[]
 }

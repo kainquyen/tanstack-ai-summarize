@@ -18,7 +18,7 @@ export function NavProjects({items}: navPrimaryProps) {
               <SidebarMenuButton asChild size="sm">
                 <Link activeProps={{
                   'data-active': true
-                }} to={item.url} activeOptions={item.activeOptions}>
+                }} to={item.to} activeOptions={item.activeOptions}>
                   <item.icon />
                   <span>{item.title}</span>
                 </Link>

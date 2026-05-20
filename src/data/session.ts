@@ -1,9 +1,16 @@
-import { auth } from "#/lib/auth";
-import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeaders } from "@tanstack/react-start/server";
+import { auth } from '#/lib/auth'
+import { createServerFn } from '@tanstack/react-start'
+import { getRequestHeaders } from '@tanstack/react-start/server'
 
-export const getSessionFn = createServerFn({ method: "GET" }).handler(async () => {
-    const headers = getRequestHeaders();
-    const session = await auth.api.getSession({ headers });
-    return session;
-});
+export const getSessionFn = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const headers = getRequestHeaders()
+    const session = await auth.api.getSession({ headers })
+
+    if (session?.user) {
+      session.user.image ||= `https://api.dicebear.com/9.x/big-ears-neutral/svg?seed=${session.user.name}`
+    }
+
+    return session
+  },
+)
