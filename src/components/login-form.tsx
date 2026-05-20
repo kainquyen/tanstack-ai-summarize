@@ -38,7 +38,7 @@ export function LoginForm() {
           onSuccess: () => {
             toast.success('Logged in successfully!')
             navigate({
-              to: '/'
+              to: '/dashboard'
             })
           },
           onError: (error) => {
@@ -101,7 +101,7 @@ export function LoginForm() {
                     <div className="flex items-center">
                       <FieldLabel htmlFor={field.name}>Password</FieldLabel>
                       <Link
-                        to="/forgot-password"
+                        to="/"
                         className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                       >
                         Forgot your password?

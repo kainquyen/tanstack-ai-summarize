@@ -2,22 +2,11 @@ import { Link } from '@tanstack/react-router'
 import { Button, buttonVariants } from '../ui/button'
 import { ThemeToggle } from './ThemeToggle'
 import { authClient } from '#/lib/auth-client'
-import { toast } from 'sonner'
+import { useLogout } from '#/lib/handle'
 
 const Navbar = () => {
   const { data: session, isPending } = authClient.useSession()
-  const handleLogout = async () => {
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          toast.success('Successfully logged out.') // Optionally, you can show a success message or perform additional actions here
-        },
-        onError: (error) => {
-          toast.error(error.error.message)
-        },
-      },
-    })
-  }
+  const handleLogout = useLogout()
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 ">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
