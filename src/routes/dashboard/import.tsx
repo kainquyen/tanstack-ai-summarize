@@ -121,7 +121,7 @@ function RouteComponent() {
                       {isPending ? (
                         <>
                           <Loader2 className="size-4 animate-spin" />
-                          "Processing..."
+                          Processing...
                         </>
                       ) : (
                         'Import Url'
@@ -211,7 +211,7 @@ function RouteComponent() {
                       {isPending ? (
                         <>
                           <Loader2 className="size-4 animate-spin" />
-                          "Processing..."
+                          Processing...
                         </>
                       ) : (
                         'Import Urls'

@@ -5,8 +5,10 @@ import { getSessionFn } from './session'
 import type z from 'zod'
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { customImportMetaDataSchema, importSchema } from '#/schemas/import'
+import { authFnMiddleware } from '#/middlewares/auth'
 
 export const scrapeUrlFn = createServerFn({ method: 'POST' })
+  .middleware([authFnMiddleware])
   .inputValidator(importSchema)
   .handler(async ({ data }) => {
     const session = await getSessionFn()
