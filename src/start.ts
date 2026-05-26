@@ -1,6 +1,7 @@
-import { auth } from '#/lib/auth'
+// src/start.ts
+import { createMiddleware, createStart } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
-import { createMiddleware } from '@tanstack/react-start'
+import { auth } from './lib/auth'
 import { redirect } from '@tanstack/react-router'
 
 export const authMiddleware = createMiddleware({ type: 'request' }).server(
@@ -11,7 +12,7 @@ export const authMiddleware = createMiddleware({ type: 'request' }).server(
 
     if (!session && url.pathname.startsWith('/dashboard')) {
       throw redirect({
-        to: '/signup',
+        to: '/login',
         search: {
           redirect: url.pathname,
         },
@@ -21,3 +22,9 @@ export const authMiddleware = createMiddleware({ type: 'request' }).server(
     return next({ context: { session } })
   },
 )
+
+export const startInstance = createStart(() => {
+  return {
+    requestMiddleware: [authMiddleware],
+  }
+})

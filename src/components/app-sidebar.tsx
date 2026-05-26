@@ -43,6 +43,7 @@ const navItems: navPrimaryProps['items'] = linkOptions([
 ])
 
 export function AppSidebar({user}: NavUserProps) {
+  
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
