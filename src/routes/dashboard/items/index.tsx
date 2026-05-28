@@ -2,6 +2,7 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardHeader, CardTitle } from '#/components/ui/card'
 import { getItemsFn } from '#/data/items'
+import { copyToClipboard } from '#/lib/clipboard'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Copy } from 'lucide-react'
 
@@ -32,7 +33,10 @@ function RouteComponent() {
             <CardHeader className='space-y-3 pt-4'> 
               <div className="flex items-center justify-between gap-2">
                 <Badge variant={item.status === 'COMPLETED' ? 'default' : 'secondary'}>{item.status.toLowerCase()}</Badge>
-                <Button className="size-8" variant="outline" size="icon">
+                <Button className="size-8" variant="outline" size="icon" onClick={async(e) => {
+                  e.preventDefault()
+                  await copyToClipboard(item.url)
+                }}>
                   <Copy className="size-4"/>
                 </Button>
               </div>
