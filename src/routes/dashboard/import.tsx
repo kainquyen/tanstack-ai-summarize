@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
+import { Checkbox } from '#/components/ui/checkbox'
 import {
   Field,
   FieldError,
@@ -14,12 +15,14 @@ import {
 } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
-import { scrapeUrlFn } from '#/data/items'
+import { mapUrlFn, scrapeUrlFn, scrapeUrlsFn } from '#/data/items'
 import { bulkImportSchema, importSchema } from '#/schemas/import'
+import type { SearchResultWeb } from '@mendable/firecrawl-js'
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute } from '@tanstack/react-router'
 import { Globe, LinkIcon, Loader2 } from 'lucide-react'
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/dashboard/import')({
   component: RouteComponent,
@@ -27,6 +30,42 @@ export const Route = createFileRoute('/dashboard/import')({
 
 function RouteComponent() {
   const [isPending, startTransition] = useTransition()
+  const [isBulkUrlsPening, startBulkTransition] = useTransition()
+  const [discoverLinks, setDiscoverLinks] = useState<Array<SearchResultWeb>>([])
+  const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set())
+
+  function handleSelectAll() {
+    if (selectedUrls.size === discoverLinks.length) {
+      setSelectedUrls(new Set())
+    } else {
+      setSelectedUrls(new Set(discoverLinks.map((link) => link.url)))
+    }
+  }
+
+  function handleToggleUrl(url: string) {
+    const newSelected = new Set(selectedUrls)
+    if (newSelected.has(url)) {
+      newSelected.delete(url)
+    } else {
+      newSelected.add(url)
+    }
+
+    setSelectedUrls(newSelected)
+  }
+
+  function handleBulkImport() {
+    startBulkTransition(async () => {
+      if (selectedUrls.size === 0) {
+        toast.error('Please select at least one URL to import!')
+        return
+      }
+
+      await scrapeUrlsFn({ data: { urls: Array.from(selectedUrls) } })
+
+      toast.success(`Successfully imported ${selectedUrls.size}`)
+    })
+  }
+
   const form = useForm({
     defaultValues: {
       url: '',
@@ -35,8 +74,8 @@ function RouteComponent() {
       onSubmit: importSchema,
     },
     onSubmit: ({ value }) => {
-      startTransition(async() => {
-        await scrapeUrlFn({data: value})
+      startTransition(async () => {
+        await scrapeUrlFn({ data: value })
       })
     },
   })
@@ -49,7 +88,10 @@ function RouteComponent() {
       onSubmit: bulkImportSchema,
     },
     onSubmit: ({ value }) => {
-      console.log(value)
+      startTransition(async () => {
+        const data = await mapUrlFn({ data: value })
+        setDiscoverLinks(data.links)
+      })
     },
   })
   return (
@@ -141,7 +183,7 @@ function RouteComponent() {
                   Discover and import multiple URLs from a website at once🚀
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 <form
                   onSubmit={(e) => {
                     e.preventDefault()
@@ -219,6 +261,63 @@ function RouteComponent() {
                     </Button>
                   </FieldGroup>
                 </form>
+
+                {discoverLinks.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">
+                        Found {discoverLinks.length} URLs
+                      </p>
+
+                      <Button
+                        onClick={handleSelectAll}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {selectedUrls.size === discoverLinks.length
+                          ? 'Deselect All'
+                          : 'Select All'}
+                      </Button>
+                    </div>
+
+                    <div className="max-h-80 space-y-2 overflow-y-auto rounded-md border p-4">
+                      {discoverLinks.map((link) => (
+                        <label
+                          key={link.url}
+                          className="hover:bg-muted/50 flex cursor-pointer items-start gap-3 rounded-md p-2"
+                        >
+                          <Checkbox
+                            checked={selectedUrls.has(link.url)}
+                            onCheckedChange={() => handleToggleUrl(link.url)}
+                            className="mt-0.5"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">
+                              {link.title ?? 'Title has not been found'}
+                            </p>
+                            <p className="text-muted-foreground truncate text-xs">
+                              {link.description ??
+                                'Desciption has not been found'}
+                            </p>
+                            <p className="text-muted-foreground truncate text-xs">
+                              {link.url}
+                            </p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                    <Button onClick={handleBulkImport} className="w-full">
+                      {isBulkUrlsPening ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin" />
+                          Importing...
+                        </>
+                      ) : (
+                        `Import ${selectedUrls.size}`
+                      )}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
