@@ -1,7 +1,14 @@
 import { Badge } from '#/components/ui/badge'
 import { Button, buttonVariants } from '#/components/ui/button'
 import { Card, CardHeader, CardTitle } from '#/components/ui/card'
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '#/components/ui/empty'
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '#/components/ui/empty'
 import { Input } from '#/components/ui/input'
 import {
   Select,
@@ -10,12 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
+import { Skeleton } from '#/components/ui/skeleton'
 import { getItemsFn } from '#/data/items'
 import { ItemStatus } from '#/generated/prisma/enums'
 import { copyToClipboard } from '#/lib/clipboard'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Copy, Inbox } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Suspense, use, useEffect, useState } from 'react'
 import z from 'zod'
 
 const itemsSearchSchema = z.object({
@@ -25,11 +33,35 @@ const itemsSearchSchema = z.object({
 
 export const Route = createFileRoute('/dashboard/items/')({
   component: RouteComponent,
-  loader: () => getItemsFn(),
+  loader: () => ({ itemsPromise: getItemsFn() }),
   validateSearch: itemsSearchSchema,
 })
 
 type ItemsSearch = z.infer<typeof itemsSearchSchema>
+
+function ItemsGridSkeleton() {
+  return (
+    <div className="grid gap-6 md:grid-cols-2">
+      {[1, 2, 3, 4].map((i) => (
+        <Card key={i} className="overflow-hidden pt-0">
+          <Skeleton className="aspect-video w-full" />
+          <CardHeader className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="size-8 rounded-md" />
+            </div>
+
+            {/* Title */}
+            <Skeleton className="h-6 w-full" />
+
+            {/* Author  */}
+            <Skeleton className="h-4 w-40" />
+          </CardHeader>
+        </Card>
+      ))}
+    </div>
+  )
+}
 
 function ItemsList({
   q,
@@ -38,9 +70,10 @@ function ItemsList({
 }: {
   q: ItemsSearch['q']
   status: ItemsSearch['status']
-  data: Awaited<ReturnType<typeof getItemsFn>>
+  data: ReturnType<typeof getItemsFn>
 }) {
-  const filteredItems = data.filter((item) => {
+  const items = use(data)
+  const filteredItems = items.filter((item) => {
     const matchesQuery =
       q === '' ||
       item.title?.toLowerCase().includes(q.toLowerCase()) ||
@@ -59,15 +92,15 @@ function ItemsList({
             <Inbox className="size-12" />
           </EmptyMedia>
           <EmptyTitle>
-            {data.length === 0 ? 'No Items saved yet' : 'No items found'}
+            {items.length === 0 ? 'No Items saved yet' : 'No items found'}
           </EmptyTitle>
           <EmptyDescription>
-            {data.length === 0
+            {items.length === 0
               ? 'Import a URL to get started with saving your content.'
               : 'No items match your current search filters.'}
           </EmptyDescription>
         </EmptyHeader>
-        {data.length === 0 && (
+        {items.length === 0 && (
           <EmptyContent>
             <Link className={buttonVariants()} to="/dashboard/import">
               Import URL
@@ -132,7 +165,7 @@ function ItemsList({
 }
 
 function RouteComponent() {
-  const data = Route.useLoaderData()
+  const { itemsPromise } = Route.useLoaderData()
   const { q, status } = Route.useSearch()
   const [searchInput, setSearchInput] = useState(q)
   const navigate = useNavigate({ from: Route.fullPath })
@@ -184,7 +217,9 @@ function RouteComponent() {
         </Select>
       </div>
 
-      <ItemsList q={q} status={status} data={data} />
+      <Suspense fallback={<ItemsGridSkeleton />}>
+        <ItemsList q={q} status={status} data={itemsPromise} />
+      </Suspense>
     </div>
   )
 }
