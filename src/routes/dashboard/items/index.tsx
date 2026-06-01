@@ -35,6 +35,13 @@ export const Route = createFileRoute('/dashboard/items/')({
   component: RouteComponent,
   loader: () => ({ itemsPromise: getItemsFn() }),
   validateSearch: itemsSearchSchema,
+  head: () => ({
+    meta: [
+      {
+        title: 'Your Saved Items',
+      }
+    ]
+  }),
 })
 
 type ItemsSearch = z.infer<typeof itemsSearchSchema>
@@ -117,7 +124,11 @@ function ItemsList({
           key={item.id}
           className="group overflow-hidden transition-all hover:shadow-lg pt-0"
         >
-          <Link to="/dashboard/items/$itemId" params={{ itemId: item.id }} className="block">
+          <Link
+            to="/dashboard/items/$itemId"
+            params={{ itemId: item.id }}
+            className="block"
+          >
             {item.ogImage && (
               <div className="aspect-video w-full overflow-hidden bg-muted">
                 <img
