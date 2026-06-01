@@ -1,27 +1,26 @@
 // src/start.ts
-import { createMiddleware, createStart } from '@tanstack/react-start'
-import { getRequestHeaders } from '@tanstack/react-start/server'
-import { auth } from './lib/auth'
-import { redirect } from '@tanstack/react-router'
+import { createStart } from '@tanstack/react-start'
 
-export const authMiddleware = createMiddleware({ type: 'request' }).server(
-  async ({ next, request }) => {
-    const url = new URL(request.url)
-    const headers = getRequestHeaders()
-    const session = await auth.api.getSession({ headers })
+import { authMiddleware } from './middlewares/auth'
 
-    if (!session && url.pathname.startsWith('/dashboard')) {
-      throw redirect({
-        to: '/login',
-        search: {
-          redirect: url.pathname,
-        },
-      })
-    }
+// export const authMiddleware = createMiddleware({ type: 'request' }).server(
+//   async ({ next, request }) => {
+//     const url = new URL(request.url)
+//     const headers = getRequestHeaders()
+//     const session = await auth.api.getSession({ headers })
 
-    return next({ context: { session } })
-  },
-)
+//     if (!session && url.pathname.startsWith('/dashboard') || !session && url.pathname.startsWith('/api')) {
+//       throw redirect({
+//         to: '/login',
+//         search: {
+//           redirect: url.pathname,
+//         },
+//       })
+//     }
+
+//     return next({ context: { session } })
+//   },
+// )
 
 export const startInstance = createStart(() => {
   return {
