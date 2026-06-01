@@ -1,3 +1,4 @@
+import { MessageResponse } from '#/components/ai-elements/message'
 import { Button, buttonVariants } from '#/components/ui/button'
 import { Card, CardContent } from '#/components/ui/card'
 import {
@@ -109,7 +110,9 @@ function RouteComponent() {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <Card className="mt-2">
-                <CardContent>{data.content}</CardContent>
+                <CardContent>
+                  <MessageResponse>{data.content}</MessageResponse>
+                </CardContent>
               </Card>
             </CollapsibleContent>
           </Collapsible>
