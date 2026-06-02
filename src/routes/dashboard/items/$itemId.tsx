@@ -92,15 +92,16 @@ function RouteComponent() {
         </Link>
       </div>
 
-      {data.ogImage && (
-        <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted">
-          <img
-            src={data.ogImage}
-            alt="OG Image"
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-          />
-        </div>
-      )}
+      <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted">
+        <img
+          src={
+            data.ogImage ??
+            'https://images.unsplash.com/photo-1614851099511-773084f6911d?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmxhY2slMjBncmFkaWVudHxlbnwwfHwwfHx8MA%3D%3D'
+          }
+          alt="OG Image"
+          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+        />
+      </div>
 
       <div className="space-y-3">
         <h1 className="text-3xl font-bold tracking-tight">

@@ -39,8 +39,8 @@ export const Route = createFileRoute('/dashboard/items/')({
     meta: [
       {
         title: 'Your Saved Items',
-      }
-    ]
+      },
+    ],
   }),
 })
 
@@ -129,15 +129,16 @@ function ItemsList({
             params={{ itemId: item.id }}
             className="block"
           >
-            {item.ogImage && (
-              <div className="aspect-video w-full overflow-hidden bg-muted">
-                <img
-                  src={item.ogImage}
-                  alt={item.title ?? 'Article image'}
-                  className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                />
-              </div>
-            )}
+            <div className="aspect-video w-full overflow-hidden bg-muted">
+              <img
+                src={
+                  item.ogImage ??
+                  'https://images.unsplash.com/photo-1614851099511-773084f6911d?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmxhY2slMjBncmFkaWVudHxlbnwwfHwwfHx8MA%3D%3D'
+                }
+                alt={item.title ?? 'Article image'}
+                className="h-full w-full object-cover transition-transform group-hover:scale-105"
+              />
+            </div>
             <CardHeader className="space-y-3 pt-4">
               <div className="flex items-center justify-between gap-2">
                 <Badge

@@ -8,11 +8,13 @@ import {
   bulkImportSchema,
   customImportMetaDataSchema,
   importSchema,
+  searchSchema,
 } from '#/schemas/import'
 import { authMiddleware } from '#/middlewares/auth'
 import { notFound } from '@tanstack/react-router'
 import { generateText } from 'ai'
 import { openrouter } from '#/lib/open-router'
+import type { SearchResultWeb } from '@mendable/firecrawl-js'
 
 export const scrapeUrlFn = createServerFn({ method: 'POST' })
   .inputValidator(importSchema)
@@ -247,4 +249,21 @@ Example: technology, programming, web development, javascript`,
     })
 
     return updatedItem
+  })
+
+export const searchWebFn = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .inputValidator(searchSchema)
+  .handler(async ({ data }) => {
+    const results = await firecrawl.search(data.query, {
+      limit: 15,
+      // tbs: 'qdr:y', // Search for results from the past year
+      
+    });
+
+    return results.web?.map((result) => ({
+      title: (result as SearchResultWeb).title,
+      url: (result as SearchResultWeb).url,
+      description: (result as SearchResultWeb).description,
+    })) as SearchResultWeb[];
   })
