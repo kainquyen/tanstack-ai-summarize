@@ -1,6 +1,6 @@
 import { Badge } from '#/components/ui/badge'
 import { Button, buttonVariants } from '#/components/ui/button'
-import { Card, CardHeader, CardTitle } from '#/components/ui/card'
+import { Card, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import {
   Empty,
   EmptyContent,
@@ -167,6 +167,23 @@ function ItemsList({
 
               {item.author && (
                 <p className="text-muted-foreground text-xs">{item.author}</p>
+              )}
+
+              {item.summary && (
+                <CardDescription className="line-clamp-3 text-sm text-muted-foreground">
+                  {item.summary}
+                </CardDescription>
+              )}
+
+              {/* Tags */}
+              {item.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {item.tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
               )}
             </CardHeader>
           </Link>
