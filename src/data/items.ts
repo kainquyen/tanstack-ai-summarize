@@ -11,6 +11,8 @@ import {
 } from '#/schemas/import'
 import { authMiddleware } from '#/middlewares/auth'
 import { notFound } from '@tanstack/react-router'
+import { generateText } from 'ai'
+import { openrouter } from '#/lib/open-router'
 
 export const scrapeUrlFn = createServerFn({ method: 'POST' })
   .inputValidator(importSchema)
@@ -173,18 +175,17 @@ export const scrapeUrlsFn = createServerFn({ method: 'POST' })
 
 export const getItemsFn = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
-  .handler(async ({context}) => {
+  .handler(async ({ context }) => {
     const items = await prisma.savedItem.findMany({
       where: {
-        userId: context.session?.user.id
+        userId: context.session?.user.id,
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     })
     return items
   })
-
 
 export const getItemByIdFn = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
@@ -194,12 +195,56 @@ export const getItemByIdFn = createServerFn({ method: 'GET' })
       where: {
         userId: context.session?.user.id,
         id: data.id,
-      }
+      },
     })
-    
-    if(!item) {
+
+    if (!item) {
       throw notFound()
     }
-    
+
     return item
+  })
+
+export const generateSummaryAndTagsFn = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .inputValidator(z.object({ id: z.string(), summary: z.string() }))
+  .handler(async ({ data, context }) => {
+    const existingItem = await prisma.savedItem.findUnique({
+      where: {
+        userId: context.session?.user.id,
+        id: data.id,
+      },
+    })
+
+    if (!existingItem) {
+      throw notFound()
+    }
+
+    const { text } = await generateText({
+      model: openrouter.chat('openrouter/owl-alpha'),
+      system: `You are a helpful assistant that extracts relevant tags from content summaries.
+Extract 3-5 short, relevant tags that categorize the content.
+Return ONLY a comma-separated list of tags, nothing else.
+Example: technology, programming, web development, javascript`,
+      prompt: `Extract tags from this summary: \n\n${data.summary}`,
+    })
+
+    const tags = text
+      .split(',')
+      .map((tag) => tag.trim().toLowerCase())
+      .filter((tag) => tag.length > 0)
+      .slice(0, 5) // Limit to 5 tags
+
+    const updatedItem = await prisma.savedItem.update({
+      where: {
+        id: data.id,
+        userId: context.session?.user.id,
+      },
+      data: {
+        summary: data.summary,
+        tags: tags,
+      },
+    })
+
+    return updatedItem
   })

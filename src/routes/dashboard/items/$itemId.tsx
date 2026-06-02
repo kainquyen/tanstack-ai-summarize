@@ -6,24 +6,28 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '#/components/ui/collapsible'
-import { getItemByIdFn } from '#/data/items'
+import { generateSummaryAndTagsFn, getItemByIdFn } from '#/data/items'
 import { cn } from '#/lib/utils'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
 import {
   ArrowLeft,
-  Badge,
   Calendar,
   ChevronDown,
   Clock,
   ExternalLink,
+  Loader2,
+  Sparkle,
   User,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useCompletion } from '@ai-sdk/react'
+import { toast } from 'sonner'
+import { Badge } from '#/components/ui/badge'
 
 export const Route = createFileRoute('/dashboard/items/$itemId')({
   component: RouteComponent,
   loader: ({ params }) => getItemByIdFn({ data: { id: params.itemId } }),
-  head: ({loaderData}) => ({
+  head: ({ loaderData }) => ({
     meta: [
       {
         title: loaderData?.title ?? 'Untitled',
@@ -35,14 +39,47 @@ export const Route = createFileRoute('/dashboard/items/$itemId')({
       {
         name: 'twitter:title',
         content: loaderData?.title ?? 'Untitled',
-      }
-    ]
-  })
+      },
+    ],
+  }),
 })
 
 function RouteComponent() {
   const data = Route.useLoaderData()
   const [contentOpen, setContentOpen] = useState(false)
+  const router = useRouter()
+  const { completion, complete, isLoading } = useCompletion({
+    api: '/api/ai/summary',
+    initialCompletion: data.summary || '',
+    streamProtocol: 'text',
+    body: {
+      itemId: data.id,
+    },
+    onFinish: async (_prompt, completionText) => {
+      await generateSummaryAndTagsFn({
+        data: {
+          id: data.id,
+          summary: completionText,
+        },
+      })
+
+      toast.success('Summary generated successfully!')
+      router.invalidate()
+    },
+    onError: (error) => {
+      toast.error(
+        error.message || 'An error occurred while generating the summary.',
+      )
+    },
+  })
+
+  const handleGenerateSummary = () => {
+    if (!data.content) {
+      toast.error('No content available to summarize.')
+      return
+    }
+    complete(data.content)
+  }
   return (
     <div className="mx-auto space-y-6 w-full">
       <div className="flex justify-start">
@@ -112,7 +149,46 @@ function RouteComponent() {
         )}
 
         {/* Summary section  */}
-        <p>asfadfadsf</p>
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent>
+            <div className="flex flex-start justify-between gap-4">
+              <div className="flex-1">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-primary mb-3">
+                  Summary
+                </h2>
+
+                {completion || data.summary ? (
+                  <MessageResponse>{completion}</MessageResponse>
+                ) : (
+                  <p className="text-muted-foreground italic">
+                    {data.content
+                      ? 'No summary yet, generate one by clicking the button!'
+                      : 'No content available to summarize.'}
+                  </p>
+                )}
+              </div>
+              {data.content && !data.summary && (
+                <Button
+                  onClick={handleGenerateSummary}
+                  disabled={isLoading}
+                  size="sm"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkle className="mr-2 h-4 w-4" />
+                      Generate
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Content section  */}
         {data.content && (
@@ -120,7 +196,12 @@ function RouteComponent() {
             <CollapsibleTrigger asChild>
               <Button variant="outline" className="w-full justify-between">
                 <span className="font-medium">Full Content</span>
-                <ChevronDown className={cn('size-4 transition-transform', contentOpen && 'rotate-180')} />
+                <ChevronDown
+                  className={cn(
+                    'size-4 transition-transform',
+                    contentOpen && 'rotate-180',
+                  )}
+                />
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent>
