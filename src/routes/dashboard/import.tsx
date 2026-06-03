@@ -107,6 +107,8 @@ function RouteComponent() {
         const res = await scrapeUrlFn({ data: value })
         if(res.status === 409) {
           toast.error(res.message)
+        }else {
+          toast.success('Import url successfull!')
         }
       })
     },
