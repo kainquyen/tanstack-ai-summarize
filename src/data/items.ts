@@ -109,6 +109,11 @@ export const scrapeUrlsFn = createServerFn({ method: 'POST' })
     }),
   )
   .handler(async ({ data, context }) => {
+    const session = await getSessionFn()
+    if (!session) {
+      throw new Error('Unauthorized')
+    }
+
     // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < data.urls.length; i++) {
       const url = data.urls[i]
@@ -116,7 +121,7 @@ export const scrapeUrlsFn = createServerFn({ method: 'POST' })
       const item = await prisma.savedItem.create({
         data: {
           url: url,
-          userId: context.session?.user.id,
+          userId: session.user.id,
           status: 'PROCESSING',
         },
       })

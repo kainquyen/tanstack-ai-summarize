@@ -9,9 +9,13 @@ export const authMiddleware = createMiddleware({ type: 'request' }).server(
     const headers = getRequestHeaders()
     const session = await auth.api.getSession({ headers })
 
-    if (!session && url.pathname.startsWith('/dashboard') || !session && url.pathname.startsWith('/api')) {
+    if(!url.pathname.startsWith('/dashboard') && !url.pathname.startsWith('/api/ai')) {
+      return next()
+    }
+
+    if (!session) {
       throw redirect({
-        to: '/signup',
+        to: '/login',
         search: {
           redirect: url.pathname,
         },
