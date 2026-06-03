@@ -14,6 +14,7 @@ import {
   FieldLabel,
 } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
+import { Progress } from '#/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { mapUrlFn, scrapeUrlFn, scrapeUrlsFn } from '#/data/items'
 import { bulkImportSchema, importSchema } from '#/schemas/import'
@@ -33,6 +34,7 @@ function RouteComponent() {
   const [isBulkUrlsPening, startBulkTransition] = useTransition()
   const [discoverLinks, setDiscoverLinks] = useState<Array<SearchResultWeb>>([])
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set())
+  const [progress, setProgress] = useState<bulkScrapeProgress | null>(null)
 
   function handleSelectAll() {
     if (selectedUrls.size === discoverLinks.length) {
@@ -60,9 +62,36 @@ function RouteComponent() {
         return
       }
 
-      await scrapeUrlsFn({ data: { urls: Array.from(selectedUrls) } })
+      setProgress({
+        completed: 0,
+        total: selectedUrls.size,
+        url: '',
+        status: 'success',
+      })
+      let successCount = 0
+      let failedCount = 0
 
-      toast.success(`Successfully imported ${selectedUrls.size}`)
+      for await (const update of await scrapeUrlsFn({
+        data: { urls: Array.from(selectedUrls) },
+      })) {
+        setProgress(update)
+
+        if (update.status === 'success') {
+          successCount++
+        } else {
+          failedCount++
+        }
+      }
+
+      setProgress(null)
+
+      if (failedCount > 0) {
+        toast.success(`Imported ${successCount} Urls (${failedCount} failed)`)
+      } else {
+        toast.success(`Successfully imported ${successCount} URLs`)
+      }
+
+      setSelectedUrls(new Set())
     })
   }
 
@@ -306,11 +335,27 @@ function RouteComponent() {
                         </label>
                       ))}
                     </div>
+
+                    {progress && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            Importing: {progress.completed}/{progress.total}
+                          </span>
+                        </div>
+
+                        <Progress
+                          value={(progress.completed / progress.total) * 100}
+                        />
+                      </div>
+                    )}
                     <Button onClick={handleBulkImport} className="w-full">
                       {isBulkUrlsPening ? (
                         <>
                           <Loader2 className="size-4 animate-spin" />
-                          Importing...
+                          {progress
+                            ? `Importing ${progress.completed}/${progress.total}...`
+                            : 'Starting...'}
                         </>
                       ) : (
                         `Import ${selectedUrls.size}`

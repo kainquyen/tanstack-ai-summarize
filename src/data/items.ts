@@ -101,6 +101,13 @@ export const mapUrlFn = createServerFn({ method: 'POST' })
     return res
   })
 
+export type bulkScrapeProgress = {
+  completed: number
+  total: number
+  url: string
+  status: 'success' | 'failed'
+}
+
 export const scrapeUrlsFn = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
   .inputValidator(
@@ -108,11 +115,12 @@ export const scrapeUrlsFn = createServerFn({ method: 'POST' })
       urls: z.array(z.string().url()),
     }),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async function* ({ data, context }) {
     const session = await getSessionFn()
     if (!session) {
       throw new Error('Unauthorized')
     }
+    const total = data.urls.length
 
     // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < data.urls.length; i++) {
@@ -125,6 +133,8 @@ export const scrapeUrlsFn = createServerFn({ method: 'POST' })
           status: 'PROCESSING',
         },
       })
+
+      let status: bulkScrapeProgress['status'] = 'success'
 
       try {
         const result = await firecrawl.scrape(url, {
@@ -168,6 +178,7 @@ export const scrapeUrlsFn = createServerFn({ method: 'POST' })
         })
       } catch (error) {
         // console.log(error)
+        status = 'failed'
         await prisma.savedItem.update({
           where: {
             id: item.id,
@@ -177,6 +188,14 @@ export const scrapeUrlsFn = createServerFn({ method: 'POST' })
           },
         })
       }
+
+      const progress: bulkScrapeProgress = {
+        completed: i + 1,
+        total: total,
+        url: url,
+        status: status,
+      }
+      yield progress
     }
   })
 
@@ -263,12 +282,11 @@ export const searchWebFn = createServerFn({ method: 'POST' })
     const results = await firecrawl.search(data.query, {
       limit: 15,
       // tbs: 'qdr:y', // Search for results from the past year
-      
-    });
+    })
 
     return results.web?.map((result) => ({
       title: (result as SearchResultWeb).title,
       url: (result as SearchResultWeb).url,
       description: (result as SearchResultWeb).description,
-    })) as SearchResultWeb[];
+    })) as SearchResultWeb[]
   })
