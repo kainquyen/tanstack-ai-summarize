@@ -23,6 +23,17 @@ export const scrapeUrlFn = createServerFn({ method: 'POST' })
     if (!session) {
       throw new Error('Unauthorized')
     }
+    const existing = await prisma.savedItem.findFirst({
+      where: {
+        url: data.url,
+        userId: session.user.id
+      }
+    })
+
+    if(existing) {
+      return {message: 'Already exist this article!', status: 409 }
+    }
+
     const item = await prisma.savedItem.create({
       data: {
         url: data.url,

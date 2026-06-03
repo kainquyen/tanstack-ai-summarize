@@ -104,7 +104,10 @@ function RouteComponent() {
     },
     onSubmit: ({ value }) => {
       startTransition(async () => {
-        await scrapeUrlFn({ data: value })
+        const res = await scrapeUrlFn({ data: value })
+        if(res.status === 409) {
+          toast.error(res.message)
+        }
       })
     },
   })
