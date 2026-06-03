@@ -71,13 +71,10 @@ export const scrapeUrlFn = createServerFn({ method: 'POST' })
 
       return updatedItem
     } catch (error) {
-      // console.log(error)
-      const failed = await prisma.savedItem.update({
+
+      const failed = await prisma.savedItem.delete({
         where: {
           id: item.id,
-        },
-        data: {
-          status: 'FAILED',
         },
       })
       return failed
@@ -179,12 +176,9 @@ export const scrapeUrlsFn = createServerFn({ method: 'POST' })
       } catch (error) {
         // console.log(error)
         status = 'failed'
-        await prisma.savedItem.update({
+        await prisma.savedItem.delete({
           where: {
             id: item.id,
-          },
-          data: {
-            status: 'FAILED',
           },
         })
       }
