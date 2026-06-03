@@ -26,12 +26,12 @@ export const scrapeUrlFn = createServerFn({ method: 'POST' })
     const existing = await prisma.savedItem.findFirst({
       where: {
         url: data.url,
-        userId: session.user.id
-      }
+        userId: session.user.id,
+      },
     })
 
-    if(existing) {
-      return {message: 'Already exist this article!', status: 409 }
+    if (existing) {
+      return { message: 'Already exist this article!', status: 409 }
     }
 
     const item = await prisma.savedItem.create({
@@ -82,7 +82,6 @@ export const scrapeUrlFn = createServerFn({ method: 'POST' })
 
       return updatedItem
     } catch (error) {
-
       const failed = await prisma.savedItem.delete({
         where: {
           id: item.id,
@@ -133,6 +132,16 @@ export const scrapeUrlsFn = createServerFn({ method: 'POST' })
     // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < data.urls.length; i++) {
       const url = data.urls[i]
+
+      const existing = await prisma.savedItem.findFirst({
+        where: {
+          url: url,
+          userId: session.user.id,
+        },
+      })
+      if (existing) {
+        continue;
+      }
 
       const item = await prisma.savedItem.create({
         data: {
