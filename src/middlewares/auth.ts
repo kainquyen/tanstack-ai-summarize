@@ -3,25 +3,20 @@ import { getRequestHeaders } from '@tanstack/react-start/server'
 import { createMiddleware } from '@tanstack/react-start'
 import { redirect } from '@tanstack/react-router'
 
-export const authMiddleware = createMiddleware({ type: 'request' }).server(
-  async ({ next, request }) => {
-    const url = new URL(request.url)
+// 1. Middleware thuần để inject session (dùng cho server functions)
+export const sessionMiddleware = createMiddleware({ type: 'function' })
+  .server(async ({ next }) => {
     const headers = getRequestHeaders()
     const session = await auth.api.getSession({ headers })
-
-    if(!url.pathname.startsWith('/dashboard') && !url.pathname.startsWith('/api/ai')) {
-      return next()
-    }
-
-    if (!session) {
-      throw redirect({
-        to: '/login',
-        search: {
-          redirect: url.pathname,
-        },
-      })
-    }
-
     return next({ context: { session } })
-  },
-)
+  })
+
+// 2. Middleware bảo vệ route (dùng cho server functions cần auth)
+export const authMiddleware = createMiddleware({ type: 'function' })
+  .middleware([sessionMiddleware])
+  .server(async ({ next, context }) => {
+    if (!context.session) {
+      throw redirect({ to: '/login' })
+    }
+    return next()
+  })

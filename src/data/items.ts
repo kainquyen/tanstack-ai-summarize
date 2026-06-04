@@ -18,15 +18,13 @@ import type { SearchResultWeb } from '@mendable/firecrawl-js'
 
 export const scrapeUrlFn = createServerFn({ method: 'POST' })
   .inputValidator(importSchema)
-  .handler(async ({ data }) => {
-    const session = await getSessionFn()
-    if (!session) {
-      throw new Error('Unauthorized')
-    }
+  .handler(async ({ data, context }) => {
+    const userId = context.session.user.id
+
     const existing = await prisma.savedItem.findFirst({
       where: {
         url: data.url,
-        userId: session.user.id,
+        userId,
       },
     })
 
@@ -37,7 +35,7 @@ export const scrapeUrlFn = createServerFn({ method: 'POST' })
     const item = await prisma.savedItem.create({
       data: {
         url: data.url,
-        userId: session.user.id,
+        userId,
         status: 'PROCESSING',
       },
     })
@@ -92,7 +90,6 @@ export const scrapeUrlFn = createServerFn({ method: 'POST' })
   })
 
 export const mapUrlFn = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware])
   .inputValidator(bulkImportSchema)
   .handler(async ({ data }) => {
     const res = await firecrawl.map(data.url, {
@@ -116,17 +113,13 @@ export type bulkScrapeProgress = {
 }
 
 export const scrapeUrlsFn = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware])
   .inputValidator(
     z.object({
       urls: z.array(z.string().url()),
     }),
   )
   .handler(async function* ({ data, context }) {
-    const session = await getSessionFn()
-    if (!session) {
-      throw new Error('Unauthorized')
-    }
+    const userId = context.session.user.id
     const total = data.urls.length
 
     // eslint-disable-next-line @typescript-eslint/prefer-for-of
@@ -136,17 +129,17 @@ export const scrapeUrlsFn = createServerFn({ method: 'POST' })
       const existing = await prisma.savedItem.findFirst({
         where: {
           url: url,
-          userId: session.user.id,
+          userId,
         },
       })
       if (existing) {
-        continue;
+        continue
       }
 
       const item = await prisma.savedItem.create({
         data: {
           url: url,
-          userId: session.user.id,
+          userId,
           status: 'PROCESSING',
         },
       })
@@ -214,11 +207,11 @@ export const scrapeUrlsFn = createServerFn({ method: 'POST' })
   })
 
 export const getItemsFn = createServerFn({ method: 'GET' })
-  .middleware([authMiddleware])
   .handler(async ({ context }) => {
+    const userId = context.session.user.id
     const items = await prisma.savedItem.findMany({
       where: {
-        userId: context.session?.user.id,
+        userId,
       },
       orderBy: {
         createdAt: 'desc',
@@ -228,12 +221,12 @@ export const getItemsFn = createServerFn({ method: 'GET' })
   })
 
 export const getItemByIdFn = createServerFn({ method: 'GET' })
-  .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data, context }) => {
+    const userId = context.session.user.id
     const item = await prisma.savedItem.findUnique({
       where: {
-        userId: context.session?.user.id,
+        userId,
         id: data.id,
       },
     })
@@ -246,12 +239,12 @@ export const getItemByIdFn = createServerFn({ method: 'GET' })
   })
 
 export const generateSummaryAndTagsFn = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string(), summary: z.string() }))
   .handler(async ({ data, context }) => {
+    const userId = context.session.user.id
     const existingItem = await prisma.savedItem.findUnique({
       where: {
-        userId: context.session?.user.id,
+        userId,
         id: data.id,
       },
     })
@@ -278,7 +271,7 @@ Example: technology, programming, web development, javascript`,
     const updatedItem = await prisma.savedItem.update({
       where: {
         id: data.id,
-        userId: context.session?.user.id,
+        userId,
       },
       data: {
         summary: data.summary,
@@ -290,7 +283,6 @@ Example: technology, programming, web development, javascript`,
   })
 
 export const searchWebFn = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware])
   .inputValidator(searchSchema)
   .handler(async ({ data }) => {
     const results = await firecrawl.search(data.query, {
@@ -304,3 +296,8 @@ export const searchWebFn = createServerFn({ method: 'POST' })
       description: (result as SearchResultWeb).description,
     })) as SearchResultWeb[]
   })
+
+
+export const testAuthHome = createServerFn({ method: "GET"}).handler(() => {
+  console.log('okoko')
+})
